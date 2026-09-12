@@ -1,0 +1,18 @@
+import { getDefaultConfig } from "@rainbow-me/rainbowkit";
+import { defineChain } from "viem";
+
+export const generatedChain = defineChain({
+  id: {{CHAIN_ID}},
+  name: "Generated Chain",
+  nativeCurrency: { name: "{{GAS_SYMBOL}}", symbol: "{{GAS_SYMBOL}}", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["{{RPC_URL}}"] },
+  },
+});
+
+export const config = getDefaultConfig({
+  appName: "Generated dApp",
+  projectId: "YOUR_PROJECT_ID", // Add WalletConnect ID if needed
+  chains: [generatedChain],
+  ssr: true,
+});

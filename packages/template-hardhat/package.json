@@ -1,0 +1,13 @@
+{
+  "name": "generated-contracts",
+  "private": true,
+  "devDependencies": {
+    "hardhat": "^2.22.10",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.11",
+    "@openzeppelin/contracts": "^5.0.2",
+    "typescript": "^5.5.4",
+    "ts-node": "^10.9.2",
+    "dotenv": "^16.4.5"
+  }
+}

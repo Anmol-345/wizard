@@ -1,0 +1,49 @@
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/config/contract";
+import { isAddress, parseUnits } from "viem";
+import { toast } from "sonner";
+import { useEffect } from "react";
+
+export function useContractRead(functionName: string, args: any[] = []) {
+  return useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI as any,
+    functionName,
+    args,
+  });
+}
+
+export function useContractWrite(functionName: string) {
+  const { data: hash, writeContract, isPending, error } = useWriteContract();
+  
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = 
+    useWaitForTransactionReceipt({ hash });
+
+  useEffect(() => {
+    if (isConfirming) {
+      toast.loading("Transaction pending...", { id: hash });
+    }
+    if (isConfirmed) {
+      toast.success("Transaction confirmed!", { id: hash });
+    }
+    if (error) {
+      toast.error(`Transaction failed: ${error.message}`);
+    }
+  }, [isConfirming, isConfirmed, error, hash]);
+
+  const write = (args: any[]) => {
+    writeContract({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI as any,
+      functionName,
+      args,
+    });
+  };
+
+  return { write, isPending, isConfirming, isConfirmed };
+}
+
+export const utils = {
+  isAddress,
+  parseUnits,
+};

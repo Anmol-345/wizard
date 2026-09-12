@@ -1,0 +1,27 @@
+import { ethers } from "hardhat";
+import { writeFileSync } from "fs";
+
+async function main() {
+  const factory = await ethers.getContractFactory("MockERC20");
+  const contract = await factory.deploy("Generated Token", "GEN");
+  await contract.waitForDeployment();
+
+  const address = await contract.getAddress();
+  const artifact = await import(`../artifacts/contracts/MockERC20.sol/MockERC20.json`);
+
+  const manifest = {
+    address,
+    abi: artifact.abi,
+    bytecode: artifact.bytecode,
+    deployedAt: new Date().toISOString(),
+    chainId: (await ethers.provider.getNetwork()).chainId.toString(),
+  };
+
+  writeFileSync("../project.manifest.json", JSON.stringify(manifest, null, 2));
+  console.log(`Deployed to ${address}`);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exitCode = 1;
+});
