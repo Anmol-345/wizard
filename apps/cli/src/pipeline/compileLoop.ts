@@ -46,6 +46,7 @@ export async function compileWithSelfHealing(
       workingDir: projectDir,
       allowedPaths: ["contracts/**/*.sol"],
       timeoutMs: 180_000,
+      model: "gemini-1.5-pro",
     });
   }
   return { success: false, attempts: MAX_RETRIES };

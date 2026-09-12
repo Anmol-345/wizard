@@ -111,6 +111,29 @@ program
         manifest.chainId = "31337";
         manifest.rpcUrl = "http://127.0.0.1:8545";
         manifest.gasSymbol = "ETH";
+
+        // Prompt user to select which functions to include in the UI
+        if (manifest.abi && Array.isArray(manifest.abi)) {
+          const functions = manifest.abi.filter((item: any) => item.type === "function");
+          if (functions.length > 0) {
+            const options = functions.map((f: any) => ({
+              value: f.name,
+              label: f.name,
+              hint: f.stateMutability === "view" || f.stateMutability === "pure" ? "read" : "write"
+            }));
+            const selectedFunctions = await p.multiselect({
+              message: "Select which smart contract functions to include in the UI:",
+              options,
+              required: true
+            });
+            if (p.isCancel(selectedFunctions)) {
+              p.cancel("Cancelled.");
+              process.exit(0);
+            }
+            manifest.includedFunctions = selectedFunctions;
+          }
+        }
+
         await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
       } catch (e) {
         logger.warn("Could not patch project.manifest.json with custom address.");

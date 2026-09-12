@@ -111,34 +111,8 @@ export function Navbar() {
 `;
 }
 
-function buildPageCode(projectName: string, contractAddress: string, chainId: number, conceptPrompt: string): string {
-  // Derive a short, readable description from the concept prompt (first sentence / up to 120 chars)
-  const conceptDescription = conceptPrompt.trim().length > 120
-    ? conceptPrompt.trim().slice(0, 117) + "..."
-    : conceptPrompt.trim();
-
-  return `import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { StatCards } from "@/components/dashboard/StatCards";
-import { ContractActions } from "@/components/dashboard/ContractActions";
-
-export default function Home() {
-  return (
-    <>
-      <DashboardHeader />
-      <main className="w-full pb-20 flex flex-col">
-        <StatCards />
-        <ContractActions />
-
-        <footer className="mt-16 border-t border-zinc-200 dark:border-zinc-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500 px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl w-full">
-          <p>Built with <span className="font-semibold text-zinc-900 dark:text-zinc-100">DApp Wizard</span> · Wagmi v2 · RainbowKit · Next.js</p>
-          <p className="font-mono">Chain ID: ${chainId}</p>
-        </footer>
-      </main>
-    </>
-  );
-}
-`;
-}
+// We no longer deterministically build page.tsx or Navbar.tsx!
+// The AI will generate these along with the landing page components.
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
@@ -153,7 +127,7 @@ export async function synthesizeFrontend(
   const manifestRaw = await readFile(manifestPath, "utf-8");
   const manifest = JSON.parse(manifestRaw);
 
-  const { address, chainId, abi } = manifest;
+  const { address, chainId, abi, includedFunctions } = manifest;
   const rpcUrl = manifest.rpcUrl ?? "http://127.0.0.1:8545";
   const gasSymbol = manifest.gasSymbol ?? "ETH";
   const chainIdNum = Number(chainId);
@@ -280,7 +254,10 @@ export default function RootLayout({
 
   // Write all structural files
   await writeFile(path.join(frontendDir, "app", "globals.css"), globalsCss);
-  await writeFile(path.join(frontendDir, "app", "layout.tsx"), layoutCode);
+  await writeFile(
+    path.join(frontendDir, "app", "layout.tsx"),
+    layoutCode
+  );
   await writeFile(
     path.join(frontendDir, "components", "providers.tsx"),
     buildProvidersCode(projectName, chainIdNum, rpcUrl, gasSymbol)
@@ -288,17 +265,9 @@ export default function RootLayout({
 
   // Ensure directories exist
   await mkdir(path.join(frontendDir, "components", "layout"), { recursive: true });
+  await mkdir(path.join(frontendDir, "components", "landing"), { recursive: true });
   await mkdir(path.join(frontendDir, "components", "dashboard"), { recursive: true });
   await mkdir(path.join(frontendDir, "config"), { recursive: true });
-
-  await writeFile(
-    path.join(frontendDir, "components", "layout", "Navbar.tsx"),
-    buildNavbarCode(projectName, chainIdNum)
-  );
-  await writeFile(
-    path.join(frontendDir, "app", "page.tsx"),
-    buildPageCode(projectName, address, chainIdNum, conceptPrompt)
-  );
 
   // ── Write config/contract.ts deterministically ──
   // This is ALWAYS written from the manifest so the app boots even if the AI
@@ -342,14 +311,15 @@ export default nextConfig;\n`;
   await writeFile(path.join(frontendDir, "next.config.mjs"), nextConfigCode);
 
   // ── Write dashboard component stubs (AI will overwrite with real implementations) ──
+  // (We skip stubs for landing components since they don't break the build if they are just missing until AI finishes, wait, actually if page.tsx imports them they will break! We are letting AI generate page.tsx too so it won't break until the end.)
   const headerStub = `"use client";\nexport function DashboardHeader() {\n  return <div>Loading header...</div>;\n}\n`;
   const statStub = `"use client";\nexport function StatCards() {\n  return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 text-zinc-400 text-sm">Loading stats\u2026</div></div>;\n}\n`;
   const actionsStub = `"use client";\nexport function ContractActions() {\n  return <div className="grid grid-cols-1 gap-5 lg:grid-cols-2"><div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 text-zinc-400 text-sm">Loading actions\u2026</div></div>;\n}\n`;
+  
   const dashDir = path.join(frontendDir, "components", "dashboard");
   const headerPath = path.join(dashDir, "DashboardHeader.tsx");
   const statPath = path.join(dashDir, "StatCards.tsx");
   const actionsPath = path.join(dashDir, "ContractActions.tsx");
-  // Write stubs so page.tsx never has a missing import — AI will overwrite these
   await writeFile(headerPath, headerStub);
   await writeFile(statPath, statStub);
   await writeFile(actionsPath, actionsStub);
@@ -377,6 +347,9 @@ export default nextConfig;\n`;
     "### ABI UI Schema (use this to generate the components)",
     JSON.stringify(uiSchema, null, 2),
     "",
+    "### Included Functions (User Selection)",
+    includedFunctions ? `The user ONLY wants to expose these functions in the UI:\n${JSON.stringify(includedFunctions, null, 2)}\n\nDO NOT generate any stat cards or action blocks for functions that are not in this list.` : "ALL (Generate UI for all functions in the ABI).",
+    "",
     "### Raw ABI (use this for the wagmi hooks — import CONTRACT_ABI from @/config/contract)",
     JSON.stringify(abi, null, 2),
   ].join("\n");
@@ -386,14 +359,22 @@ export default nextConfig;\n`;
     userPrompt,
     workingDir: frontendDir,
     allowedPaths: [
-      "components/dashboard/**/*.tsx",
+      "app/**/*.tsx",
+      "components/**/*.tsx",
     ],
     expectedFiles: [
+      "components/layout/Navbar.tsx",
+      "components/landing/HeroSection.tsx",
+      "components/landing/HowItWorks.tsx",
+      "components/dashboard/ContractInfo.tsx",
       "components/dashboard/DashboardHeader.tsx",
       "components/dashboard/StatCards.tsx",
       "components/dashboard/ContractActions.tsx",
+      "components/layout/Footer.tsx",
+      "app/page.tsx"
     ],
-    timeoutMs: 300_000,
+    timeoutMs: 900_000,
+    model: "gemini-1.5-pro",
   });
 
   if (!res.success) {
@@ -477,8 +458,10 @@ export async function synthesizeFrontendDeterministic(
     `import type { Metadata } from "next";\nimport { Inter } from "next/font/google";\nimport "./globals.css";\nimport "@rainbow-me/rainbowkit/styles.css";\nimport { Providers } from "@/components/providers";\nconst inter = Inter({ subsets: ["latin"] });\nexport const metadata: Metadata = { title: "${projectName} | dApp Dashboard" };\nexport default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {\n  return (<html lang="en" className="dark"><body className={inter.className}><Providers>{children}</Providers></body></html>);\n}\n`
   );
   await writeFile(path.join(frontendDir, "components", "providers.tsx"), buildProvidersCode(projectName, chainIdNum, rpcUrl, gasSymbol));
-  await writeFile(path.join(frontendDir, "components", "layout", "Navbar.tsx"), buildNavbarCode(projectName, chainIdNum));
-  await writeFile(path.join(frontendDir, "app", "page.tsx"), buildPageCode(projectName, address, chainIdNum, conceptPrompt));
+  await writeFile(
+    path.join(frontendDir, "app", "page.tsx"),
+    `export default function Home() { return <div>Run without --skip-ai to generate UI.</div>; }`
+  );
 
   // Write a placeholder config/contract.ts
   const contractTs = `import { defineChain } from "viem";\n\nexport const CONTRACT_ADDRESS = "${address}" as \`0x\${string}\`;\nexport const CONTRACT_ABI = ${JSON.stringify(abi, null, 2)} as const;\n\nexport const generatedChain = defineChain({\n  id: ${chainIdNum},\n  name: "Localhost",\n  nativeCurrency: { name: "${gasSymbol}", symbol: "${gasSymbol}", decimals: 18 },\n  rpcUrls: { default: { http: ["${rpcUrl}"] } },\n});\n`;

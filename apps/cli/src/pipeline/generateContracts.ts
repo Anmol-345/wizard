@@ -38,7 +38,8 @@ export async function generateContracts(
       workingDir: projectDir,
       allowedPaths: ["contracts/**/*.sol"],
       expectedFiles: [], // Just rely on the agent creating a .sol file
-      timeoutMs: 300_000,
+      timeoutMs: 900_000,
+      model: "gemini-1.5-pro",
     });
 
     if (!res.success) {

@@ -70,6 +70,7 @@ export async function fixFrontendWithSelfHealing(
         "lib/**/*.ts",
       ],
       timeoutMs: 240_000,
+      model: "gemini-1.5-pro",
     });
   }
 
