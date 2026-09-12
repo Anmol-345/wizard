@@ -29,6 +29,8 @@ const MAX_ATTEMPTS = 3;
 
 export class AntigravityRunner implements AgentRunner {
   async run(inv: AgentInvocation): Promise<AgentResult> {
+    const expected = inv.expectedFiles ?? [];
+    const modelStr = (this as any)._model;
     // Use the pre-rendered override if provided, otherwise read from disk
     const systemPrompt = inv.systemPromptOverride
       ?? (inv.systemPromptPath ? await readFile(inv.systemPromptPath, "utf-8") : "");
@@ -58,7 +60,7 @@ Do not explain, do not summarize, do not talk. Your next action MUST be a write_
 ${originalPrompt}`;
       }
 
-      lastResult = await spawnAgy(promptContent, inv.workingDir, inv.timeoutMs, inv.model);
+      lastResult = await spawnAgy(promptContent, inv.workingDir, inv.timeoutMs, modelStr);
       const verification = await verifyOutput(inv.workingDir, expected);
 
       if (verification.ok) {

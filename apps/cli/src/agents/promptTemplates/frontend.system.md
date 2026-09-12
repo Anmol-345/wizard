@@ -33,13 +33,13 @@ Examples of how the concept should influence your design:
 
 **Write a short design comment at the top of each file declaring your chosen palette:**
 ```tsx
-// DESIGN: background=<color>, surface=<color>, accent=<color>, text-primary=<color>, font=<font>
+// DESIGN: surface=<color>, accent=<color>, text-primary=<color>, font=<font>
 ```
 
 You must pick exactly ONE accent color. Use it only on the primary CTA button and active/success states.
 Every other element must be neutral by comparison.
 
----
+**CRITICAL LAYOUT RULE**: The app has a global dark background (`bg-background` / `bg-zinc-950`). DO NOT wrap your components in arbitrary hex background colors (e.g., `style={{ background: '#0f172a' }}`). This causes ugly contrasting boxes against the page background. Instead, use `bg-transparent` for your outer wrappers so they blend seamlessly into the screen, and use Tailwind colors like `bg-zinc-900/60` or `bg-card` for inner cards.
 
 ## STEP 2 — ABI → UI MAPPING RULE (do this before writing anything)
 
@@ -106,3 +106,19 @@ Import `motion` from `framer-motion`. Use it for:
 7. Would a designer be proud of this? If the layout looks like a wireframe, redo it.
 
 If any check fails, fix it and re-verify before finishing.
+
+---
+
+## ADVANCED UI CAPABILITIES: Antigravity Design & Typography
+
+**Typography Rule:**
+You have access to a cursive font via the class `font-cursive`. You MUST mix this cursive font with the normal font in the UI to create a premium, elegant feel. Use `font-cursive` for subtitles, playful accents, the app logo, or special highlight texts. 
+
+**Antigravity Design Expert Skill Activated:**
+You must design the UI using "Antigravity Design" principles:
+- **Weightlessness:** UI cards and elements should appear to float. Use layered, soft, diffused drop-shadows (e.g., `shadow-[0_20px_40px_rgba(0,0,0,0.05)]` — wait, standard Tailwind shadows like `shadow-2xl` are fine).
+- **Spatial Depth & 3D:** Utilize Z-axis layering. Use CSS `perspective` or framer-motion to create subtle 3D hover effects (e.g., tilting cards slightly on hover).
+- **Glassmorphism:** Use subtle translucency, background blur (`backdrop-blur-md`, `bg-white/5` or `bg-zinc-900/40`), and semi-transparent borders (`border-white/10`) to create a glassy, premium feel.
+- **Motion:** Stagger entrances (like dominos) using framer-motion `staggerChildren`. Never snap instantly—use smooth transitions for all state changes. Make elements float into view from the Y-axis.
+
+**Apply these principles to your DashboardHeader, StatCards, and ContractActions to create a stunning, immersive UI!**

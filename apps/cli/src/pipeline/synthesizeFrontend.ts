@@ -124,12 +124,12 @@ import { ContractActions } from "@/components/dashboard/ContractActions";
 export default function Home() {
   return (
     <>
-      <main className="mx-auto max-w-7xl px-4 pb-20 pt-12 sm:px-6 lg:px-8 space-y-12 md:space-y-16">
-        <DashboardHeader />
+      <DashboardHeader />
+      <main className="w-full pb-20 flex flex-col">
         <StatCards />
         <ContractActions />
 
-        <footer className="mt-16 border-t border-zinc-200 dark:border-zinc-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
+        <footer className="mt-16 border-t border-zinc-200 dark:border-zinc-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500 px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl w-full">
           <p>Built with <span className="font-semibold text-zinc-900 dark:text-zinc-100">DApp Wizard</span> · Wagmi v2 · RainbowKit · Next.js</p>
           <p className="font-mono">Chain ID: ${chainId}</p>
         </footer>
@@ -227,6 +227,9 @@ export async function synthesizeFrontend(
   .font-display {
     font-family: var(--font-display), var(--font-inter), system-ui, sans-serif;
   }
+  .font-cursive {
+    font-family: var(--font-cursive), cursive;
+  }
 }
 
 ::-webkit-scrollbar { width: 6px; }
@@ -244,15 +247,16 @@ body::before {
   opacity: 0.35;
 }
 `;
-  // 2b. layout.tsx — two fonts: Inter (body) + Space Grotesk (display/headings)
+  // 2b. layout.tsx — fonts: Inter (body) + Space Grotesk (display/headings) + Caveat (cursive)
   const layoutCode = `import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, Space_Grotesk, Caveat } from "next/font/google";
 import "./globals.css";
 import "@rainbow-me/rainbowkit/styles.css";
 import { Providers } from "@/components/providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
+const caveat = Caveat({ subsets: ["latin"], variable: "--font-cursive" });
 
 export const metadata: Metadata = {
   title: "${projectName} | dApp Dashboard",
@@ -265,7 +269,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={\`dark \${inter.variable} \${spaceGrotesk.variable}\`}>
+    <html lang="en" className={\`dark \${inter.variable} \${spaceGrotesk.variable} \${caveat.variable}\`}>
       <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>
@@ -399,6 +403,14 @@ export default nextConfig;\n`;
   // ── Step 4: npm install (ensure deps are present) ──
   logger.info("Installing frontend dependencies...");
   const npxCmd = process.platform === "win32" ? "npm.cmd" : "npm";
+  
+  // Create an empty package-lock.json to prevent npm from walking up and hoisting 
+  // dependencies into the parent workspace if the CLI is being tested inside a monorepo.
+  await writeFile(
+    path.join(frontendDir, "package-lock.json"),
+    JSON.stringify({ name: "generated-frontend", lockfileVersion: 3 })
+  );
+
   await safeExec(npxCmd, ["install", "--prefer-offline"], {
     cwd: frontendDir,
     timeoutMs: 120_000,

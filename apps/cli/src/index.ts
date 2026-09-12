@@ -68,15 +68,32 @@ program
 
     try {
       // ── 5. Scaffold base template ──
-      spinner.start("Scaffolding Next.js template…");
+      spinner.start("Scaffolding templates…");
       await fs.mkdir(generatedDir, { recursive: true });
+      // Scaffold frontend
       await fs.cp(
         path.join(rootDir, "packages", "template-frontend"),
         frontendDir,
         { recursive: true }
       );
+      // Scaffold hardhat (smart contract environment)
+      await fs.cp(
+        path.join(rootDir, "packages", "template-hardhat"),
+        generatedDir,
+        { recursive: true }
+      );
 
-      spinner.stop(color.green("✓ Template scaffolded"));
+      // Strip .template extensions from hardhat files
+      const hardhatFiles = await fs.readdir(generatedDir, { recursive: true });
+      for (const file of hardhatFiles) {
+        if (typeof file === "string" && file.endsWith(".template")) {
+          const oldPath = path.join(generatedDir, file);
+          const newPath = path.join(generatedDir, file.replace(/\.template$/, ""));
+          await fs.rename(oldPath, newPath);
+        }
+      }
+
+      spinner.stop(color.green("✓ Templates scaffolded"));
 
       // ── 6. Generate Smart Contract & ABI via AI ──
       const agent = new AntigravityRunner();
