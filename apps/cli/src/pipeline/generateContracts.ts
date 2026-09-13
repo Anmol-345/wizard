@@ -76,12 +76,14 @@ export async function generateContracts(
     await execAsync("npx hardhat compile", { cwd: projectDir, env: { ...process.env, HARDHAT_DISABLE_TELEMETRY: "true" } });
     
     // Extract ABI
-    const contractName = await extractPrimaryContractName(projectDir);
-    const artifactPath = path.join(projectDir, "artifacts", "contracts", `${contractName}.sol`, `${contractName}.json`);
+    const { contractName, fileName } = await extractPrimaryContractName(projectDir);
+    const artifactPath = path.join(projectDir, "artifacts", "contracts", fileName, `${contractName}.json`);
     const artifactContent = await readFile(artifactPath, "utf-8");
     const artifact = JSON.parse(artifactContent);
     
     const manifest = {
+      name: contractName,
+      fileName,
       address: "0x0000000000000000000000000000000000000000",
       chainId: "31337",
       rpcUrl: "http://127.0.0.1:8545",
@@ -98,7 +100,7 @@ export async function generateContracts(
   logger.info("Contract generation finished.");
 }
 
-export async function extractPrimaryContractName(projectDir: string): Promise<string> {
+export async function extractPrimaryContractName(projectDir: string): Promise<{ contractName: string, fileName: string }> {
   const contractsDir = path.join(projectDir, "contracts");
   const files = await readdir(contractsDir);
   
@@ -108,7 +110,7 @@ export async function extractPrimaryContractName(projectDir: string): Promise<st
       // naive regex to find contract name
       const match = content.match(/contract\s+([A-Za-z0-9_]+)\s*(?:is|{)/);
       if (match) {
-        return match[1];
+        return { contractName: match[1], fileName: file };
       }
     }
   }

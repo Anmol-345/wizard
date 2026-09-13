@@ -2,12 +2,12 @@ import { ethers } from "hardhat";
 import { writeFileSync } from "fs";
 
 async function main() {
-  const factory = await ethers.getContractFactory("MockERC20");
-  const contract = await factory.deploy("Generated Token", "GEN");
+  const factory = await ethers.getContractFactory("{{CONTRACT_NAME}}");
+  const contract = await factory.deploy(/* {{CONSTRUCTOR_ARGS}} */);
   await contract.waitForDeployment();
 
   const address = await contract.getAddress();
-  const artifact = await import(`../artifacts/contracts/MockERC20.sol/MockERC20.json`);
+  const artifact = await import(`../artifacts/contracts/{{FILE_NAME}}/{{CONTRACT_NAME}}.json`);
 
   const manifest = {
     address,
@@ -17,7 +17,7 @@ async function main() {
     chainId: (await ethers.provider.getNetwork()).chainId.toString(),
   };
 
-  writeFileSync("../project.manifest.json", JSON.stringify(manifest, null, 2));
+  writeFileSync("project.manifest.json", JSON.stringify(manifest, null, 2));
   console.log(`Deployed to ${address}`);
 }
 

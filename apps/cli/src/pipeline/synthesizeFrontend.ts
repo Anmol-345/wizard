@@ -130,6 +130,7 @@ export async function synthesizeFrontend(
   const { address, chainId, abi, includedFunctions } = manifest;
   const rpcUrl = manifest.rpcUrl ?? "http://127.0.0.1:8545";
   const gasSymbol = manifest.gasSymbol ?? "ETH";
+  const chainName = manifest.chainName ?? "Localhost";
   const chainIdNum = Number(chainId);
 
   // Use the project folder name as the display name — the user typed it explicitly.
@@ -281,7 +282,7 @@ export default function RootLayout({
     ``,
     `export const generatedChain = defineChain({`,
     `  id: ${chainIdNum},`,
-    `  name: "Localhost",`,
+    `  name: "${chainName}",`,
     `  nativeCurrency: { name: "${gasSymbol}", symbol: "${gasSymbol}", decimals: 18 },`,
     `  rpcUrls: { default: { http: [${JSON.stringify(rpcUrl)}] } },`,
     `});`,

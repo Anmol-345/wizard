@@ -21,13 +21,14 @@ function classifyDeployError(stderr: string): DeploymentErrorKind {
   return "UNKNOWN";
 }
 
-export async function deployContract(projectDir: string, contractName: string) {
+export async function deployContract(projectDir: string, contractName: string, fileName: string) {
   logger.info(`Deploying contract ${contractName}...`);
 
-  const deployTemplatePath = path.join(projectDir, "scripts", "deploy.ts.template");
+  const deployTemplatePath = path.join(projectDir, "scripts", "deploy.ts");
   let deployScript = await readFile(deployTemplatePath, "utf-8");
 
   deployScript = deployScript.replace(/\{\{CONTRACT_NAME\}\}/g, contractName);
+  deployScript = deployScript.replace(/\{\{FILE_NAME\}\}/g, fileName);
   deployScript = deployScript.replace(/\/\* \{\{CONSTRUCTOR_ARGS\}\} \*\//g, "");
 
   const deployDestPath = path.join(projectDir, "scripts", "deploy.ts");

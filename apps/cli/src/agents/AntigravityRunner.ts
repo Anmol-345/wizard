@@ -146,6 +146,7 @@ async function spawnAgy(
 
   child.stdout.on("data", (chunk: Buffer) => {
     stdout += chunk.toString();
+    process.stdout.write(chunk);
     if (stdout.length > MAX) child.kill("SIGKILL");
   });
 
